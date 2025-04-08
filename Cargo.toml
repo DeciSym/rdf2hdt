@@ -4,13 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-anyhow = "1.0.97"
 chrono = "0.4.40"
+clap = { version = "4.5", features = ["derive","cargo"] }
+clap-verbosity-flag = "3.0"
 crc = "3.2.1"
-hdt = { path = "../hdt" }
-log = "0.4.27"
-oxrdf = "0.2.4"
-oxrdfio = "0.1.7"
-sucds = "0.8.1"
-tempfile = "3.19.1"
-zstd = "0.13.3"
+hdt = { git = "https://github.com/GregHanson/hdt/", branch = "more-public-vals" }
+log = "0.4"
+oxrdf = "0.2"
+oxrdfio = "0.1"
+tempfile = "3.19"
