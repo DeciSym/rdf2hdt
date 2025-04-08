@@ -1,0 +1,16 @@
+[package]
+name = "rdf2hdt"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.97"
+chrono = "0.4.40"
+crc = "3.2.1"
+hdt = { path = "../hdt" }
+log = "0.4.27"
+oxrdf = "0.2.4"
+oxrdfio = "0.1.7"
+sucds = "0.8.1"
+tempfile = "3.19.1"
+zstd = "0.13.3"
