@@ -1,7 +1,14 @@
 [package]
 name = "rdf2hdt"
-version = "0.1.0"
+version = "0.1.1"
+authors = ["Greg Hanson <g.isaac.hanson@gmail.com>"]
 edition = "2024"
+license = "BSD-3-Clause"
+description = "Library for converting a RDF data to HDT"
+repository = "https://github.com/DeciSym/rdf2hdt"
+readme = "README.md"
+keywords = ["hdt", "rdf", "semantic-web", "converter", "parser"]
+categories = ["command-line-utilities", "encoding", "parser-implementations", "science", "web-programming"]
 
 [dependencies]
 chrono = "0.4.40"
