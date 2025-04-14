@@ -1,12 +1,12 @@
 // Copyright (c) 2024-2025, Decisym, LLC
 
-use hdt::containers::vbyte::encode_vbyte;
-use log::warn;
 use std::{
     error::Error,
     fs::File,
     io::{BufWriter, Write},
 };
+
+use hdt::containers::vbyte::encode_vbyte;
 
 pub fn save_u32_vec(
     ints: &[u32],
@@ -43,6 +43,7 @@ pub fn save_u32_vec(
     Ok(())
 }
 
+// TODO duplicate of containers/sequence.rs::save()
 fn pack_bits(data: &[u32], bits_per_entry: u8) -> Vec<u8> {
     assert!(bits_per_entry > 0 && bits_per_entry as usize <= std::mem::size_of::<usize>() * 8);
 
@@ -81,14 +82,6 @@ fn pack_bits(data: &[u32], bits_per_entry: u8) -> Vec<u8> {
     output
 }
 
-pub fn convert_vec_u32_to_vec_u8(ints: &[u32]) -> Vec<u8> {
-    let mut bytes = Vec::with_capacity(ints.len() * 4);
-    for offset in ints {
-        bytes.extend_from_slice(&offset.to_le_bytes());
-    }
-    bytes
-}
-
 pub fn byte_align_bitmap(bits: &[bool]) -> Vec<u8> {
     let mut byte = 0u8;
     let mut bit_index = 0;
@@ -112,18 +105,4 @@ pub fn byte_align_bitmap(bits: &[bool]) -> Vec<u8> {
         byte_vec.push(byte);
     }
     byte_vec
-}
-
-pub fn usize_to_u8_array(val: usize) -> [u8; 1] {
-    if val > 255 {
-        warn!("{val} greater than 255");
-    }
-    [(val & 0xFF) as u8] // Extracts the least significant byte
-}
-
-pub fn bytes_for_bitmap(bits: usize) -> usize {
-    if bits == 0 {
-        return 1;
-    }
-    ((bits - 1) >> 3) + 1
 }

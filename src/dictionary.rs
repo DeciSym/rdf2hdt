@@ -1,7 +1,7 @@
 // Copyright (c) 2024-2025, Decisym, LLC
 
 use hdt::{
-    containers::{ControlType, Sequence, vbyte::encode_vbyte},
+    containers::{self, ControlType, Sequence, vbyte::encode_vbyte},
     dict_sect_pfc::DictSectPFC,
 };
 use log::{debug, error};
@@ -9,17 +9,17 @@ use oxrdf::Term;
 use oxrdfio::RdfFormat::NTriples;
 use oxrdfio::RdfParser;
 use std::{
-    collections::{BTreeSet, HashMap},
+    collections::{BTreeSet, HashMap, HashSet},
     error::Error,
     fs::File,
     io::{BufReader, BufWriter},
     sync::Arc,
 };
 
-use crate::{hdt::Options, vocab::HDT_DICTIONARY_TYPE_FOUR};
+use super::{builder::Options, vocab::HDT_DICTIONARY_TYPE_FOUR};
 
 #[derive(Default, Debug)]
-pub struct FourSectionDictionary {
+pub struct FourSectDictBuilder {
     so_id_map: HashMap<String, u32>,
     pred_id_map: HashMap<String, u32>,
     subject_id_map: HashMap<String, u32>,
@@ -41,14 +41,14 @@ enum DictionaryRole {
     Object,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct EncodedTripleId {
     pub subject: u32,
     pub predicate: u32,
     pub object: u32,
 }
 
-impl FourSectionDictionary {
+impl FourSectDictBuilder {
     // fn number_of_elements(&self) -> usize {
     //     self.so_terms.len()
     //         + self.subject_terms.len()
@@ -68,13 +68,15 @@ impl FourSectionDictionary {
             }
         };
         let source_reader = BufReader::new(source);
-        let mut triples = vec![];
+        // use Hashset on triples to remove duplicates
+        let mut triples = HashSet::new();
         let quads = RdfParser::from_format(NTriples).for_reader(source_reader);
         let timer = std::time::Instant::now();
 
+        // TODO: compare times with Vec followed by parallel sort vs times with BTreeSet
         let mut subject_terms = BTreeSet::new();
         let mut object_terms = BTreeSet::new();
-        let mut dict = FourSectionDictionary {
+        let mut dict = FourSectDictBuilder {
             options: opts,
             ..Default::default()
         };
@@ -113,6 +115,8 @@ impl FourSectionDictionary {
             shared_id += 1;
         }
 
+        // TODO run these 3 dictionary builds in parallel?
+
         // Subject-only: |SOG|+1 ..= |SG|
         let mut id = shared_id;
         for term in &dict.subject_terms {
@@ -131,6 +135,7 @@ impl FourSectionDictionary {
         for (i, term) in dict.predicate_terms.iter().enumerate() {
             dict.pred_id_map.insert(term.clone(), (i + 1) as u32);
         }
+        debug!("Four Section Dictions sort time: {:?}", timer.elapsed());
 
         let source = match std::fs::File::open(nt_file) {
             Ok(f) => f,
@@ -139,12 +144,12 @@ impl FourSectionDictionary {
                 return Err(e.into());
             }
         };
-
+        let triple_encoder_timer = std::time::Instant::now();
         let source_reader = BufReader::new(source);
         let quads = RdfParser::from_format(NTriples).for_reader(source_reader);
         for q in quads {
             let q = q?; //propagate the error  
-            triples.push(EncodedTripleId {
+            triples.insert(EncodedTripleId {
                 subject: dict.term_to_id(
                     &term_to_hdt_bgp_str(&q.subject.into())?,
                     DictionaryRole::Subject,
@@ -156,9 +161,13 @@ impl FourSectionDictionary {
                 object: dict.term_to_id(&term_to_hdt_bgp_str(&q.object)?, DictionaryRole::Object),
             });
         }
+        debug!(
+            "Encoding triples time: {:?}",
+            triple_encoder_timer.elapsed()
+        );
         debug!("Dictionary build time: {:?}", timer.elapsed());
         // println!("triples: {:?}", triples);
-        Ok((dict, triples))
+        Ok((dict, triples.into_iter().collect()))
     }
 
     fn term_to_id(&self, term: &str, role: DictionaryRole) -> u32 {
@@ -183,7 +192,7 @@ impl FourSectionDictionary {
 
     pub fn save(&self, dest_writer: &mut BufWriter<File>) -> Result<(), Box<dyn Error>> {
         // libhdt/src/dictionary/FourSectionDictionary.cpp::save()
-        let mut ci = hdt::containers::ControlInfo {
+        let mut ci = containers::ControlInfo {
             control_type: ControlType::Dictionary,
             format: HDT_DICTIONARY_TYPE_FOUR.to_string(),
             ..Default::default()
@@ -244,25 +253,30 @@ pub fn compress(set: &BTreeSet<String>, block_size: usize) -> Result<DictSectPFC
         if i % block_size == 0 {
             offsets.push(compressed_terms.len() as u32);
             compressed_terms.extend_from_slice(term.as_bytes());
-            // Every block stores a full term
         } else {
             let common_prefix_len = last_term
                 .chars()
                 .zip(term.chars())
                 .take_while(|(a, b)| a == b)
                 .count();
+
+            let byte_offset = term
+                .char_indices()
+                .nth(common_prefix_len)
+                .map(|(i, _)| i)
+                .unwrap_or(term.len());
+
             compressed_terms.extend_from_slice(&encode_vbyte(common_prefix_len));
-            compressed_terms.extend_from_slice(term[common_prefix_len..].as_bytes());
-        };
+            compressed_terms.extend_from_slice(term[byte_offset..].as_bytes());
+        }
 
         compressed_terms.push(0); // Null separator
-
         last_term = term;
     }
     offsets.push(compressed_terms.len() as u32);
 
     // offsets are an increasing list of array indices, therefore the last one will be the largest
-    // potential off by 1 in comparison with hdt-cpp implementation
+    // TODO: potential off by 1 in comparison with hdt-cpp implementation?
     let bits_per_entry = (offsets.last().unwrap().ilog2() + 1) as usize;
 
     Ok(DictSectPFC {

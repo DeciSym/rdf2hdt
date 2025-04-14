@@ -1,10 +1,8 @@
 // Copyright (c) 2024-2025, Decisym, LLC
 
-use crate::{
-    bitmap_triples::BitmapTriples, convert::convert_to_nt, dictionary::FourSectionDictionary,
-    vocab::*,
-};
-use hdt::containers::ControlType;
+use super::{bitmap_triples::BitmapTriplesBuilder, dictionary::FourSectDictBuilder};
+use crate::{rdf_reader::convert_to_nt, vocab::*};
+use hdt::containers::{self, ControlType};
 use log::{debug, error};
 use oxrdf::{BlankNodeRef, Literal, NamedNodeRef, Triple, vocab::rdf};
 use std::{
@@ -14,13 +12,17 @@ use std::{
     io::{BufWriter, Write},
 };
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Options {
     pub block_size: usize,
+    pub order: String,
 }
 impl Default for Options {
     fn default() -> Self {
-        Options { block_size: 16 }
+        Options {
+            block_size: 16,
+            order: "SPO".to_string(),
+        }
     }
 }
 
@@ -39,6 +41,10 @@ pub fn build_hdt(
     }
 
     let timer = std::time::Instant::now();
+    // TODO
+    // implement an RDF reader trait
+    // 1. for larger datasets, read from source files everytime since storing all triples in memory may OOM kill process
+    // 2. build Vec<Triple> in memory from source files
     let nt_file = if file_paths.len() == 1 && file_paths[0].ends_with(".nt") {
         file_paths[0].clone()
     } else {
@@ -61,9 +67,9 @@ pub fn build_hdt(
 
 impl ConvertedHDT {
     fn load(nt_file: &str, opts: Options) -> Result<Self, Box<dyn Error>> {
-        let (dictionary, encoded_triples) = FourSectionDictionary::load(nt_file, opts)?;
+        let (dictionary, encoded_triples) = FourSectDictBuilder::load(nt_file, opts.clone())?;
         let num_triples = encoded_triples.len();
-        let bmap_triples = BitmapTriples::load(encoded_triples)?;
+        let bmap_triples = BitmapTriplesBuilder::load(encoded_triples)?;
 
         let mut converted_hdt = ConvertedHDT {
             dict: dictionary,
@@ -71,7 +77,7 @@ impl ConvertedHDT {
             num_triples,
             ..Default::default()
         };
-        converted_hdt.build_header(nt_file)?;
+        converted_hdt.build_header(nt_file, opts)?;
 
         Ok(converted_hdt)
     }
@@ -83,14 +89,14 @@ impl ConvertedHDT {
         let mut dest_writer = BufWriter::new(file);
 
         // libhdt/src/hdt/BasicHDT.cpp::saveToHDT
-        let ci = hdt::containers::ControlInfo {
+        let ci = containers::ControlInfo {
             control_type: ControlType::Global,
             format: HDT_CONTAINER.to_string(),
             ..Default::default()
         };
         ci.save(&mut dest_writer)?;
 
-        let mut ci = hdt::containers::ControlInfo {
+        let mut ci = containers::ControlInfo {
             control_type: ControlType::Header,
             format: "ntriples".to_string(),
             ..Default::default()
@@ -113,7 +119,7 @@ impl ConvertedHDT {
         Ok(())
     }
 
-    fn build_header(&mut self, source_file: &str) -> Result<(), Box<dyn Error>> {
+    fn build_header(&mut self, source_file: &str, opts: Options) -> Result<(), Box<dyn Error>> {
         let mut header = HashSet::new();
         // libhdt/src/hdt/BasicHDT.cpp::fillHeader()
 
@@ -202,7 +208,7 @@ impl ConvertedHDT {
         header.insert(Triple::new(
             dict_id,
             HDT_DICT_BLOCK_SIZE,
-            Literal::new_simple_literal("16"), // TODO is this always 16?
+            Literal::new_simple_literal(opts.block_size.to_string()),
         ));
 
         // TRIPLES
@@ -218,7 +224,7 @@ impl ConvertedHDT {
         header.insert(Triple::new(
             triples_id,
             HDT_TRIPLES_ORDER,
-            Literal::new_simple_literal("SPO"),
+            Literal::new_simple_literal(opts.order),
         ));
 
         // // Sizes
@@ -258,8 +264,8 @@ impl ConvertedHDT {
 
 #[derive(Default, Debug)]
 pub struct ConvertedHDT {
-    pub dict: FourSectionDictionary,
-    pub triples: BitmapTriples,
+    pub dict: FourSectDictBuilder,
+    pub triples: BitmapTriplesBuilder,
     header: HashSet<oxrdf::Triple>,
     num_triples: usize,
 }
@@ -267,15 +273,14 @@ pub struct ConvertedHDT {
 #[cfg(test)]
 mod tests {
 
+    use super::*;
+    use hdt::{Hdt, containers::ControlInfo, four_sect_dict, header::Header, triples};
+    use std::sync::Arc;
     use std::{
         fs::remove_file,
         io::{BufReader, Read},
         path::Path,
     };
-
-    use super::*;
-    use hdt::{containers::ControlInfo, header::Header};
-    use std::sync::Arc;
 
     #[test]
     fn test_build_hdt() {
@@ -298,8 +303,8 @@ mod tests {
         let _ci = ControlInfo::read(&mut hdt_reader).expect("failed to read HDT control info");
         let _h = Header::read(&mut hdt_reader).expect("failed to read HDT Header");
 
-        let unvalidated_dict = hdt::four_sect_dict::FourSectDict::read(&mut hdt_reader)
-            .expect("failed to read dictionary");
+        let unvalidated_dict =
+            four_sect_dict::FourSectDict::read(&mut hdt_reader).expect("failed to read dictionary");
         let dict = unvalidated_dict
             .validate()
             .expect("invalid 4 section dictionary");
@@ -314,14 +319,14 @@ mod tests {
         );
         assert_eq!(dict.shared.num_strings(), conv_hdt.dict.shared_terms.len());
 
-        let _triples = hdt::triples::TriplesBitmap::read_sect(&mut hdt_reader)
-            .expect("invalid bitmap triples");
+        let _triples =
+            triples::TriplesBitmap::read_sect(&mut hdt_reader).expect("invalid bitmap triples");
         let mut buffer = [0; 1024];
         assert!(hdt_reader.read(&mut buffer).expect("failed to read") == 0);
 
         let source = std::fs::File::open(p).expect("failed to open hdt file");
         let hdt_reader = BufReader::new(source);
-        let h = hdt::Hdt::new(hdt_reader).expect("failed to load HDT file");
+        let h = Hdt::new(hdt_reader).expect("failed to load HDT file");
         let t: Vec<(Arc<str>, Arc<str>, Arc<str>)> = h.triples().collect();
         println!("{:?}", t);
         assert_eq!(t.len(), 9);

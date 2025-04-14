@@ -45,6 +45,7 @@ pub fn convert_to_nt(
             .into());
         };
         let quads = RdfParser::from_format(rdf_format).for_reader(source_reader);
+        let mut warned = false;
         for q in quads {
             let q = match q {
                 Ok(v) => v,
@@ -62,7 +63,8 @@ pub fn convert_to_nt(
                     }
                 }
             };
-            if q.graph_name != oxrdf::GraphName::DefaultGraph {
+            if !warned && q.graph_name != oxrdf::GraphName::DefaultGraph {
+                warned = true;
                 warn!("HDT does not support named graphs, merging triples for {file}");
             }
             serializer.serialize_triple(oxrdf::TripleRef {
@@ -73,7 +75,7 @@ pub fn convert_to_nt(
         }
 
         serializer.finish()?;
-        debug!("Convert time: {:?}", v.elapsed());
+        debug!("RDF to NTriple convert time: {:?}", v.elapsed());
     }
     dest_writer.flush()?;
     Ok(())

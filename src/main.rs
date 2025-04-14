@@ -26,7 +26,7 @@
 //! This will take `data.ttl`, convert to NTriple, and generate and save the HDT output to `result.hdt`.
 
 use clap::{Parser, Subcommand};
-use rdf2hdt::hdt::{Options, build_hdt};
+use rdf2hdt::builder::{Options, build_hdt};
 
 /// Command-line interface for rdf2hdt Converter
 ///
@@ -76,21 +76,28 @@ enum Commands {
 fn main() {
     let cli = Cli::parse();
 
+    env_logger::Builder::new()
+        .filter_level(cli.verbose.log_level_filter())
+        .init();
+
     match &cli.command {
         Some(Commands::Convert {
             input,
             output,
             block_size,
-        }) => match build_hdt(
-            input.clone(),
-            output,
-            Options {
-                block_size: *block_size,
-            },
-        ) {
-            Ok(_) => {}
-            Err(e) => eprintln!("Error writing: {}", e),
-        },
+        }) => {
+            match build_hdt(
+                input.clone(),
+                output,
+                Options {
+                    block_size: *block_size,
+                    order: "SPO".to_string(),
+                },
+            ) {
+                Ok(_) => {}
+                Err(e) => eprintln!("Error writing: {}", e),
+            }
+        }
         None => {}
     }
 }

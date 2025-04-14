@@ -6,7 +6,7 @@ use crate::{
     vocab::HDT_TYPE_BITMAP,
 };
 use hdt::{
-    containers::{ControlType, vbyte::encode_vbyte},
+    containers::{self, ControlType, vbyte::encode_vbyte},
     triples::Order,
 };
 use log::debug;
@@ -18,7 +18,7 @@ use std::{
 };
 
 #[derive(Default, Debug)]
-pub struct BitmapTriples {
+pub struct BitmapTriplesBuilder {
     y_vec: Vec<u32>,
     z_vec: Vec<u32>,
     bitmap_y: Vec<bool>,
@@ -27,7 +27,7 @@ pub struct BitmapTriples {
     num_triples: usize,
 }
 
-impl BitmapTriples {
+impl BitmapTriplesBuilder {
     /// Creates a new BitmapTriples from a list of sorted RDF triples
     pub fn load(mut triples: Vec<EncodedTripleId>) -> Result<Self, Box<dyn Error>> {
         // libhdt/src/triples/BitmapTriples.cpp:load()
@@ -96,7 +96,7 @@ impl BitmapTriples {
         z_bitmap.push(true);
         debug!("BitmapTriples build time: {:?}", timer.elapsed());
 
-        Ok(BitmapTriples {
+        Ok(BitmapTriplesBuilder {
             bitmap_y: y_bitmap,
             bitmap_z: z_bitmap,
             y_vec: array_y,
@@ -107,7 +107,7 @@ impl BitmapTriples {
     }
 
     pub fn save(&self, dest_writer: &mut BufWriter<File>) -> Result<(), Box<dyn Error>> {
-        let mut ci = hdt::containers::ControlInfo {
+        let mut ci = containers::ControlInfo {
             control_type: ControlType::Triples,
             format: HDT_TYPE_BITMAP.to_string(),
             ..Default::default()

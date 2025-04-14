@@ -8,7 +8,8 @@ chrono = "0.4.40"
 clap = { version = "4.5", features = ["derive","cargo"] }
 clap-verbosity-flag = "3.0"
 crc = "3.2.1"
-hdt = { git = "https://github.com/GregHanson/hdt/", branch = "more-public-vals" }
+env_logger = "0.11"
+hdt = { git = "https://github.com/KonradHoeffner/hdt/" }
 log = "0.4"
 oxrdf = "0.2"
 oxrdfio = "0.1"
