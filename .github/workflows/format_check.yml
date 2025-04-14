@@ -1,0 +1,22 @@
+name: Rustfmt Check
+
+on: [push]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint:
+    name: cargo fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt
+      - name: Rustfmt Check
+        uses: actions-rust-lang/rustfmt@v1
+      - name: Machete
+        uses: bnjbvr/cargo-machete@main
+      - name: Clippy Check
+        run: cargo clippy --benches --tests --bins --no-deps --all-features
