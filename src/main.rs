@@ -1,4 +1,5 @@
-// Copyright (c) 2024-2025, Decisym, LLC
+// Copyright (c) 2025, Decisym, LLC
+// Licensed under the BSD 3-Clause License (see LICENSE file in the project root).
 
 //! # rdf2hdt Converter
 //!

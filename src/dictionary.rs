@@ -1,4 +1,5 @@
-// Copyright (c) 2024-2025, Decisym, LLC
+// Copyright (c) 2025, Decisym, LLC
+// Licensed under the BSD 3-Clause License (see LICENSE file in the project root).
 
 use hdt::{
     containers::{self, ControlType, Sequence, vbyte::encode_vbyte},
@@ -267,7 +268,7 @@ pub fn compress(set: &BTreeSet<String>, block_size: usize) -> Result<DictSectPFC
                 .unwrap_or(term.len());
 
             compressed_terms.extend_from_slice(&encode_vbyte(common_prefix_len));
-            compressed_terms.extend_from_slice(term[byte_offset..].as_bytes());
+            compressed_terms.extend_from_slice(&term.as_bytes()[byte_offset..]);
         }
 
         compressed_terms.push(0); // Null separator

@@ -1,4 +1,5 @@
-// Copyright (c) 2024-2025, Decisym, LLC
+// Copyright (c) 2025, Decisym, LLC
+// Licensed under the BSD 3-Clause License (see LICENSE file in the project root).
 
 use crate::common::save_u32_vec;
 use hdt::containers::vbyte::encode_vbyte;
@@ -39,8 +40,15 @@ impl LogSequence2 {
                     .zip(term.chars())
                     .take_while(|(a, b)| a == b)
                     .count();
+
+                let byte_offset = term
+                    .char_indices()
+                    .nth(common_prefix_len)
+                    .map(|(i, _)| i)
+                    .unwrap_or(term.len());
+
                 compressed_terms.extend_from_slice(&encode_vbyte(common_prefix_len));
-                compressed_terms.extend_from_slice(term[common_prefix_len..].as_bytes());
+                compressed_terms.extend_from_slice(&term.as_bytes()[byte_offset..]);
             };
 
             compressed_terms.push(0); // Null separator
