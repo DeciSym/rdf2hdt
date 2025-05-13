@@ -10,7 +10,12 @@ readme = "README.md"
 keywords = ["hdt", "rdf", "semantic-web", "converter", "parser"]
 categories = ["command-line-utilities", "encoding", "parser-implementations", "science", "web-programming"]
 
+[[bench]]
+name = "benchmark"
+harness = false
+
 [dependencies]
+anyhow = "1.0.98"
 chrono = "0.4.40"
 clap = { version = "4.5", features = ["derive","cargo"] }
 clap-verbosity-flag = "3.0"
@@ -21,3 +26,10 @@ log = "0.4"
 oxrdf = "0.2"
 oxrdfio = "0.1"
 tempfile = "3.19"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["async_tokio"]}
+pprof = { version = "0.14", features = ["protobuf", "protobuf-codec", "criterion"] }
+
+[package.metadata.cargo-machete]
+ignored = ["iref", "langtag", "hdt"]

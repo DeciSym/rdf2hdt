@@ -89,6 +89,10 @@ impl FourSectDictBuilder {
                 .insert(term_to_hdt_bgp_str(&q.predicate.into())?);
             object_terms.insert(term_to_hdt_bgp_str(&q.object)?);
         }
+        if dict.predicate_terms.is_empty() {
+            error!("no triples found in provided RDF");
+            return Err(anyhow::anyhow!("no triples found in input file").into());
+        }
 
         dict.shared_terms = subject_terms.intersection(&object_terms).cloned().collect();
         dict.subject_terms = subject_terms
