@@ -46,8 +46,6 @@ pub fn save_u32_vec(
 
 // TODO duplicate of containers/sequence.rs::save()
 fn pack_bits(data: &[u32], bits_per_entry: u8) -> Vec<u8> {
-    assert!(bits_per_entry > 0 && bits_per_entry as usize <= std::mem::size_of::<usize>() * 8);
-
     let mut output = Vec::new();
     let mut current_byte = 0u8;
     let mut bit_offset = 0;

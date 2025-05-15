@@ -45,7 +45,12 @@ pub fn convert_to_nt(
             )
             .into());
         };
-        let quads = RdfParser::from_format(rdf_format).for_reader(source_reader);
+        let quads = RdfParser::from_format(rdf_format)
+            .with_base_iri(format!(
+                "file://{}",
+                Path::new(&file).file_name().unwrap().to_str().unwrap()
+            ))?
+            .for_reader(source_reader);
         let mut warned = false;
         for q in quads {
             let q = match q {

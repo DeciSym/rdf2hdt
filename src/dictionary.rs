@@ -5,7 +5,7 @@ use hdt::{
     containers::{self, ControlType, Sequence, vbyte::encode_vbyte},
     dict_sect_pfc::DictSectPFC,
 };
-use log::{debug, error};
+use log::{debug, error, warn};
 use oxrdf::Term;
 use oxrdfio::RdfFormat::NTriples;
 use oxrdfio::RdfParser;
@@ -90,8 +90,7 @@ impl FourSectDictBuilder {
             object_terms.insert(term_to_hdt_bgp_str(&q.object)?);
         }
         if dict.predicate_terms.is_empty() {
-            error!("no triples found in provided RDF");
-            return Err(anyhow::anyhow!("no triples found in input file").into());
+            warn!("no triples found in provided RDF");
         }
 
         dict.shared_terms = subject_terms.intersection(&object_terms).cloned().collect();
@@ -282,7 +281,11 @@ pub fn compress(set: &BTreeSet<String>, block_size: usize) -> Result<DictSectPFC
 
     // offsets are an increasing list of array indices, therefore the last one will be the largest
     // TODO: potential off by 1 in comparison with hdt-cpp implementation?
-    let bits_per_entry = (offsets.last().unwrap().ilog2() + 1) as usize;
+    let bits_per_entry = if num_terms == 0 {
+        0
+    } else {
+        (offsets.last().unwrap().ilog2() + 1) as usize
+    };
 
     Ok(DictSectPFC {
         num_strings: num_terms,

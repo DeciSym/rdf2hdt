@@ -1312,7 +1312,6 @@ dependencies = [
 name = "rdf2hdt"
 version = "0.1.1"
 dependencies = [
- "anyhow",
  "chrono",
  "clap",
  "clap-verbosity-flag",
@@ -1325,6 +1324,7 @@ dependencies = [
  "oxrdfio",
  "pprof",
  "tempfile",
+ "walkdir",
 ]
 
 [[package]]
