@@ -15,6 +15,7 @@ name = "benchmark"
 harness = false
 
 [dependencies]
+anyhow = "1.0"
 chrono = "0.4"
 clap = { version = "4.5", features = ["derive","cargo"] }
 clap-verbosity-flag = "3.0"

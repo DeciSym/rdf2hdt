@@ -673,7 +673,7 @@ dependencies = [
 [[package]]
 name = "hdt"
 version = "0.3.0"
-source = "git+https://github.com/KonradHoeffner/hdt/#433ca9748d9b7ff4632cedf64790254871d582c2"
+source = "git+https://github.com/KonradHoeffner/hdt/#37aa088f95a9ecd402482800e06b4c9233277216"
 dependencies = [
  "bytesize",
  "crc",
@@ -1312,6 +1312,7 @@ dependencies = [
 name = "rdf2hdt"
 version = "0.1.1"
 dependencies = [
+ "anyhow",
  "chrono",
  "clap",
  "clap-verbosity-flag",

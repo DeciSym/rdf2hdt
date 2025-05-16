@@ -5,7 +5,7 @@ use hdt::{
     containers::{self, ControlType, Sequence, vbyte::encode_vbyte},
     dict_sect_pfc::DictSectPFC,
 };
-use log::{debug, error, warn};
+use log::{debug, error};
 use oxrdf::Term;
 use oxrdfio::RdfFormat::NTriples;
 use oxrdfio::RdfParser;
@@ -90,7 +90,8 @@ impl FourSectDictBuilder {
             object_terms.insert(term_to_hdt_bgp_str(&q.object)?);
         }
         if dict.predicate_terms.is_empty() {
-            warn!("no triples found in provided RDF");
+            error!("no triples found in provided RDF");
+            return Err(anyhow::anyhow!("no triples found in the provided RDF file").into());
         }
 
         dict.shared_terms = subject_terms.intersection(&object_terms).cloned().collect();

@@ -364,6 +364,19 @@ mod tests {
 
             let res = build_hdt(vec![f.clone()], new_hdt.as_str(), Options::default());
             assert!(res.is_ok());
+
+            let source = std::fs::File::open(new_hdt).expect("failed to open hdt file");
+            let hdt_reader = BufReader::new(source);
+            let res = Hdt::new(hdt_reader);
+
+            match &res {
+                Ok(_) => {}
+                Err(e) => {
+                    eprintln!("{f} failed to load constructed hdt: {e}")
+                }
+            }
+
+            assert!(res.is_ok());
         }
     }
 
@@ -387,7 +400,25 @@ mod tests {
             match &res {
                 Ok(_) => {}
                 Err(e) => {
-                    eprintln!("{f} failed to convert: {e}")
+                    // files with no triples should error out, the HDT library errors out as well
+                    if !f.contains("empty.ttl") {
+                        eprintln!("{f} failed to convert: {e}");
+                    }
+                    assert!(f.contains("empty.ttl"));
+                    continue;
+                }
+            }
+
+            assert!(res.is_ok());
+
+            let source = std::fs::File::open(new_hdt).expect("failed to open hdt file");
+            let hdt_reader = BufReader::new(source);
+            let res = Hdt::new(hdt_reader);
+
+            match &res {
+                Ok(_) => {}
+                Err(e) => {
+                    eprintln!("{f} failed to load constructed hdt: {e}")
                 }
             }
 
@@ -416,6 +447,19 @@ mod tests {
                 Ok(_) => {}
                 Err(e) => {
                     eprintln!("{f} failed to convert: {e}")
+                }
+            }
+
+            assert!(res.is_ok());
+
+            let source = std::fs::File::open(new_hdt).expect("failed to open hdt file");
+            let hdt_reader = BufReader::new(source);
+            let res = Hdt::new(hdt_reader);
+
+            match &res {
+                Ok(_) => {}
+                Err(e) => {
+                    eprintln!("{f} failed to load constructed hdt: {e}")
                 }
             }
 
