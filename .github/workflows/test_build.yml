@@ -1,4 +1,4 @@
-name: Building CSV2RDF and testing
+name: Building RDF2HDT and testing
 
 on: 
   schedule:
