@@ -29,7 +29,7 @@ tempfile = "3.19"
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["async_tokio"]}
-pprof = { version = "0.14", features = ["protobuf", "protobuf-codec", "criterion"] }
+pprof = { version = "0.15", features = ["protobuf", "protobuf-codec", "criterion"] }
 walkdir = "2.5"
 
 [package.metadata.cargo-machete]

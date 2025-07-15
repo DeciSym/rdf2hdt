@@ -331,7 +331,7 @@ mod tests {
         let hdt_reader = BufReader::new(source);
         let h = Hdt::new(hdt_reader).expect("failed to load HDT file");
         let t: Vec<(Arc<str>, Arc<str>, Arc<str>)> = h.triples().collect();
-        println!("{:?}", t);
+        println!("{t:?}");
         assert_eq!(t.len(), 9);
 
         // http://example.org/apple#Apple,http://example.org/apple#color,Red

@@ -23,7 +23,7 @@ pub fn convert_to_nt(
         let source = match std::fs::File::open(&file) {
             Ok(f) => f,
             Err(e) => {
-                error!("Error opening file {:?}: {:?}", file, e);
+                error!("Error opening file {file:?}: {e:?}");
                 return Err(e.into());
             }
         };
