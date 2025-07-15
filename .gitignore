@@ -1,5 +1,5 @@
 /target
-
+*.hdt 
 *.hdt.index.v1-1
 *.hdt.index.v1-rust-cache
 tests/resources/taxonomy-nodes.nq

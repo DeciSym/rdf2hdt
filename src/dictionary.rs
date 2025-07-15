@@ -64,7 +64,7 @@ impl FourSectDictBuilder {
         let source = match std::fs::File::open(nt_file) {
             Ok(f) => f,
             Err(e) => {
-                error!("Error opening file {:?}: {:?}", nt_file, e);
+                error!("Error opening file {nt_file:?}: {e:?}");
                 return Err(e.into());
             }
         };
@@ -145,7 +145,7 @@ impl FourSectDictBuilder {
         let source = match std::fs::File::open(nt_file) {
             Ok(f) => f,
             Err(e) => {
-                error!("Error opening file {:?}: {:?}", nt_file, e);
+                error!("Error opening file {nt_file:?}: {e:?}");
                 return Err(e.into());
             }
         };

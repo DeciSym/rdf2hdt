@@ -96,7 +96,7 @@ fn main() {
                 },
             ) {
                 Ok(_) => {}
-                Err(e) => eprintln!("Error writing: {}", e),
+                Err(e) => eprintln!("Error writing: {e}"),
             }
         }
         None => {}
