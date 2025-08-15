@@ -1,6 +1,6 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use pprof::criterion::{Output, PProfProfiler};
-use rdf2hdt::builder::{Options, build_hdt};
+use rdf2hdt::builder::build_hdt;
 use std::time::Duration;
 use tempfile::tempdir;
 
@@ -18,7 +18,7 @@ fn generate(c: &mut Criterion) {
     group.sample_size(10);
     group.measurement_time(Duration::from_secs(1090));
     group.bench_function("hdt create", |b| {
-        b.iter(|| build_hdt(vec![source_rdf.clone()], test_hdt, Options::default()).unwrap());
+        b.iter(|| build_hdt(vec![source_rdf.clone()], test_hdt).unwrap());
     });
     group.finish();
 

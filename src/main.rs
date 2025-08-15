@@ -27,7 +27,7 @@
 //! This will take `data.ttl`, convert to NTriple, and generate and save the HDT output to `result.hdt`.
 
 use clap::{Parser, Subcommand};
-use rdf2hdt::builder::{Options, build_hdt};
+use rdf2hdt::builder::build_hdt;
 
 /// Command-line interface for rdf2hdt Converter
 ///
@@ -64,13 +64,6 @@ enum Commands {
         /// Specify the path to save the generated HDT.
         #[arg(short, long)]
         output: String,
-
-        /// Block size used during term compression
-        ///
-        /// Every Nth term will be stored fully while others will only contain everything besides the
-        /// longest common prefix of the last Nth term
-        #[arg(short, long, default_value_t = 16)]
-        block_size: usize,
     },
 }
 
@@ -82,23 +75,10 @@ fn main() {
         .init();
 
     match &cli.command {
-        Some(Commands::Convert {
-            input,
-            output,
-            block_size,
-        }) => {
-            match build_hdt(
-                input.clone(),
-                output,
-                Options {
-                    block_size: *block_size,
-                    order: "SPO".to_string(),
-                },
-            ) {
-                Ok(_) => {}
-                Err(e) => eprintln!("Error writing: {e}"),
-            }
-        }
+        Some(Commands::Convert { input, output }) => match build_hdt(input.clone(), output) {
+            Ok(_) => {}
+            Err(e) => eprintln!("Error writing: {}", e),
+        },
         None => {}
     }
 }
