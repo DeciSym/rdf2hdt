@@ -39,8 +39,8 @@ pub fn build_hdt(file_paths: Vec<String>, dest_file: &str) -> Result<hdt::Hdt, h
     debug!("HDT build time: {:?}", timer.elapsed());
 
     let out_file = OpenOptions::new()
-        .create(true)
         .write(true)
+        .create(true)
         .truncate(true)
         .open(dest_file)?;
     let mut writer = BufWriter::new(out_file);
