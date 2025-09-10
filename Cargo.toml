@@ -18,7 +18,7 @@ harness = false
 clap = { version = "4.5", features = ["derive","cargo"] }
 clap-verbosity-flag = "3.0"
 env_logger = "0.11"
-hdt = { git = "https://github.com/GregHanson/hdt/", branch = "w3c-rdf-tests" }
+hdt = { version = "0.4" }
 log = "0.4"
 oxrdf = "0.2"
 oxrdfio = "0.1"

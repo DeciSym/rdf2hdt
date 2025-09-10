@@ -91,16 +91,8 @@ mod tests {
             );
             std::fs::create_dir_all(std::path::Path::new(&hdt_file_path).parent().unwrap())?;
 
-            match build_hdt(vec![f.to_string()], &hdt_file_path) {
-                Ok(_) => {
-                    assert!(std::path::Path::new(&hdt_file_path).exists())
-                }
-                Err(e) => {
-                    use hdt::hdt::Error;
-                    use hdt::triples;
-
-                    matches!(e, Error::Triples(triples::Error::Empty));
-                }
+            if let Ok(_) = build_hdt(vec![f.to_string()], &hdt_file_path) {
+                assert!(std::path::Path::new(&hdt_file_path).exists())
             }
         }
         Ok(())
@@ -140,16 +132,8 @@ mod tests {
             );
             std::fs::create_dir_all(std::path::Path::new(&hdt_file_path).parent().unwrap())?;
 
-            match build_hdt(vec![f.to_string()], &hdt_file_path) {
-                Ok(_) => {
-                    assert!(std::path::Path::new(&hdt_file_path).exists())
-                }
-                Err(e) => {
-                    use hdt::hdt::Error;
-                    use hdt::triples;
-
-                    matches!(e, Error::Triples(triples::Error::Empty));
-                }
+            if let Ok(_) = build_hdt(vec![f.to_string()], &hdt_file_path) {
+                assert!(std::path::Path::new(&hdt_file_path).exists())
             }
         }
         Ok(())
@@ -189,16 +173,8 @@ mod tests {
             );
             std::fs::create_dir_all(std::path::Path::new(&hdt_file_path).parent().unwrap())?;
 
-            match build_hdt(vec![f.to_string()], &hdt_file_path) {
-                Ok(_) => {
-                    assert!(std::path::Path::new(&hdt_file_path).exists())
-                }
-                Err(e) => {
-                    use hdt::hdt::Error;
-                    use hdt::triples;
-
-                    matches!(e, Error::Triples(triples::Error::Empty));
-                }
+            if let Ok(_) = build_hdt(vec![f.to_string()], &hdt_file_path) {
+                assert!(std::path::Path::new(&hdt_file_path).exists())
             }
         }
         Ok(())
