@@ -91,7 +91,7 @@ mod tests {
             );
             std::fs::create_dir_all(std::path::Path::new(&hdt_file_path).parent().unwrap())?;
 
-            if let Ok(_) = build_hdt(vec![f.to_string()], &hdt_file_path) {
+            if build_hdt(vec![f.to_string()], &hdt_file_path).is_ok() {
                 assert!(std::path::Path::new(&hdt_file_path).exists())
             }
         }
@@ -132,7 +132,7 @@ mod tests {
             );
             std::fs::create_dir_all(std::path::Path::new(&hdt_file_path).parent().unwrap())?;
 
-            if let Ok(_) = build_hdt(vec![f.to_string()], &hdt_file_path) {
+            if build_hdt(vec![f.to_string()], &hdt_file_path).is_ok() {
                 assert!(std::path::Path::new(&hdt_file_path).exists())
             }
         }
@@ -173,7 +173,7 @@ mod tests {
             );
             std::fs::create_dir_all(std::path::Path::new(&hdt_file_path).parent().unwrap())?;
 
-            if let Ok(_) = build_hdt(vec![f.to_string()], &hdt_file_path) {
+            if build_hdt(vec![f.to_string()], &hdt_file_path).is_ok() {
                 assert!(std::path::Path::new(&hdt_file_path).exists())
             }
         }
