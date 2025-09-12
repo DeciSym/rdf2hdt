@@ -1,3 +1,9 @@
+[![Latest Version](https://img.shields.io/crates/v/rdf2hdt.svg)](https://crates.io/crates/rdf2hdt)
+[![Lint](https://github.com/DeciSym/rdf2hdt/actions/workflows/format_check.yml/badge.svg)](https://github.com/DeciSym/rdf2hdt/actions/workflows/format_check.yml)
+[![Build](https://github.com/DeciSym/rdf2hdt/actions/workflows/test_build.yml/badge.svg)](https://github.com/DeciSym/rdf2hdt/actions/workflows/test_build.yml)
+[![Documentation](https://docs.rs/rdf2hdt/badge.svg)](https://docs.rs/rdf2hdt/)
+
+
 # rdf2hdt
 Library for converting RDF data to HDT
 
@@ -6,9 +12,17 @@ and then generates and saves the data as HDT. Implementation is based on the [HD
 and the output HDT is intended to be consumed by one of [hdt crate](https://github.com/KonradHoeffner/hdt), [hdt-cpp](https://github.com/rdfhdt/hdt-cpp),
 or [hdt-java](https://github.com/rdfhdt/hdt-java).
 
-## Using the rdf2hdt CLI
+## Installation
 
-This library includes a CLI utility for gnerating HDT files from RDF input data. The binary can be built using `cargo build`.
+Install `rdf2hdt` with `cargo`:
+
+```bash
+cargo install rdf2hdt
+```
+
+## Usage
+
+The `rdf2hdt` CLI tool is used for generating HDT files from RDF input data.
 
 ```bash
 $ rdf2hdt convert --help
@@ -32,13 +46,6 @@ Options:
   -v, --verbose...
           Increase logging verbosity
 
-  -b, --block-size <BLOCK_SIZE>
-          Block size used during term compression
-
-          Every Nth term will be stored fully while others will only contain everything besides the longest common prefix of the last Nth term
-
-          [default: 16]
-
   -q, --quiet...
           Decrease logging verbosity
 
@@ -51,12 +58,11 @@ Options:
 HDT files can be generated directly in Rust.
 
 ```rust
-use rdf2hdt::hdt::{buld_hdt, Options};
+use rdf2hdt::hdt::buld_hdt;
 
 let result = build_hdt(
   vec!["tests/resources/apple.ttl".to_string()],
   "output.hdt",
-  Options::default(),
 )?;
 ```
 

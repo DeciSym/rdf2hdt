@@ -2,4 +2,4 @@
 // Licensed under the BSD 3-Clause License (see LICENSE file in the project root).
 
 pub mod builder;
-pub mod rdf_reader;
+pub(crate) mod rdf_reader;

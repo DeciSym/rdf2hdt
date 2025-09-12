@@ -14,7 +14,7 @@ use std::{
     path::Path,
 };
 
-pub fn convert_to_nt(
+pub(crate) fn convert_to_nt(
     file_paths: Vec<String>,
     output_file: std::fs::File,
 ) -> Result<(), Box<dyn Error>> {
