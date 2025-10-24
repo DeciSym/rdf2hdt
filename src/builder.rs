@@ -19,13 +19,11 @@ pub fn build_hdt(file_paths: Vec<String>, dest_file: &str) -> Result<hdt::Hdt, h
     }
 
     let timer = std::time::Instant::now();
-    // TODO
-    // implement an RDF reader trait
-    // 1. for larger datasets, read from source files everytime since storing all triples in memory may OOM kill process
-    // 2. build Vec<Triple> in memory from source files
+    let mut used_tmp = false;
     let nt_file = if file_paths.len() == 1 && file_paths[0].ends_with(".nt") {
         file_paths[0].clone()
     } else {
+        used_tmp = true;
         let tmp_file = tempfile::Builder::new()
             .disable_cleanup(true)
             .suffix(".nt")
@@ -46,6 +44,9 @@ pub fn build_hdt(file_paths: Vec<String>, dest_file: &str) -> Result<hdt::Hdt, h
     let mut writer = BufWriter::new(out_file);
     converted_hdt.write(&mut writer)?;
     writer.flush()?;
+    if used_tmp {
+        let _ = std::fs::remove_file(nt_file);
+    }
 
     debug!("Total execution time: {:?}", timer.elapsed());
     Ok(converted_hdt)
