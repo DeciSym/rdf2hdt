@@ -12,6 +12,8 @@
 //! ## Features
 //! - Parses RDF input and converts it to RDF triples
 //! - Convert NTriple data into HDT format
+//! - Transparent gzip (`.gz`) and bzip2 (`.bz2`) decompression of input files
+//! - `.owl` files parsed as RDF/XML
 //!
 //! ## Usage
 //! Run the rdf2hdt converter from the command line. For detailed usage information, run:
@@ -56,7 +58,9 @@ enum Commands {
         /// Path to input RDF file(s).
         ///
         /// Provide the path to one or more RDF files that will be parsed and converted.
-        /// Support file formats: https://crates.io/crates/oxrdfio
+        /// RDF syntaxes supported: see https://crates.io/crates/oxrdfio.
+        /// `.owl` files are parsed as RDF/XML. Inputs ending in `.gz` or `.bz2`
+        /// are transparently decompressed.
         #[arg(short, long, num_args = 1..)]
         input: Vec<String>,
 
