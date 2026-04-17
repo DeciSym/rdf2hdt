@@ -58,11 +58,11 @@ Options:
 HDT files can be generated directly in Rust.
 
 ```rust
-use rdf2hdt::hdt::buld_hdt;
+use rdf2hdt::build_hdt;
 
-let result = build_hdt(
-  vec!["tests/resources/apple.ttl".to_string()],
-  "output.hdt",
+let hdt = build_hdt(
+    &["tests/resources/apple.ttl"],
+    "output.hdt",
 )?;
 ```
 
