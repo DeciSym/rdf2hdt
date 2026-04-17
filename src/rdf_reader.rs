@@ -33,23 +33,33 @@ pub(crate) fn convert_to_nt(
 
         let mut serializer = RdfSerializer::from_format(NTriples).for_writer(dest_writer.by_ref());
         let v = std::time::Instant::now();
-        let rdf_format = if let Some(t) =
-            RdfFormat::from_extension(Path::new(&file).extension().unwrap().to_str().unwrap())
-        {
-            t
-        } else {
+        let ext = Path::new(&file)
+            .extension()
+            .and_then(|e| e.to_str())
+            .ok_or_else(|| {
+                std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!("file {file} has no usable extension"),
+                )
+            })?;
+        let rdf_format = RdfFormat::from_extension(ext).ok_or_else(|| {
             error!("unrecognized file extension for {file}");
-            return Err(std::io::Error::new(
+            std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
                 format!("unrecognized file extension for {file}"),
             )
-            .into());
-        };
+        })?;
+        let file_name = Path::new(&file)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .ok_or_else(|| {
+                std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!("file {file} has no usable file name"),
+                )
+            })?;
         let quads = RdfParser::from_format(rdf_format)
-            .with_base_iri(format!(
-                "file://{}",
-                Path::new(&file).file_name().unwrap().to_str().unwrap()
-            ))?
+            .with_base_iri(format!("file://{file_name}"))?
             .for_reader(source_reader);
         let mut warned = false;
         for q in quads {
