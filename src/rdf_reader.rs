@@ -15,18 +15,20 @@ use std::{
 };
 use url::Url;
 
+const IO_BUF: usize = 1 << 20;
+
 pub(crate) fn convert_to_nt<P: AsRef<Path>>(
     file_paths: &[P],
     output_file: std::fs::File,
 ) -> Result<(), Error> {
-    let mut dest_writer = BufWriter::new(output_file);
+    let mut dest_writer = BufWriter::with_capacity(IO_BUF, output_file);
     for file in file_paths {
         let file = file.as_ref();
         let source = std::fs::File::open(file).map_err(|e| {
             error!("Error opening file {}: {e:?}", file.display());
             e
         })?;
-        let source_reader = BufReader::new(source);
+        let source_reader = BufReader::with_capacity(IO_BUF, source);
 
         debug!("converting {} to nt format", file.display());
 
@@ -89,6 +91,22 @@ pub(crate) fn convert_to_nt<P: AsRef<Path>>(
         debug!("RDF to NTriple convert time: {:?}", v.elapsed());
     }
     dest_writer.flush()?;
+    Ok(())
+}
+
+pub(crate) fn concat_nt<P: AsRef<Path>>(
+    file_paths: &[P],
+    mut output_file: std::fs::File,
+) -> Result<(), Error> {
+    for file in file_paths {
+        let file = file.as_ref();
+        let mut source = std::fs::File::open(file).map_err(|e| {
+            error!("Error opening file {}: {e:?}", file.display());
+            e
+        })?;
+        io::copy(&mut source, &mut output_file)?;
+        output_file.write_all(b"\n")?;
+    }
     Ok(())
 }
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2025, Decisym, LLC
 // Licensed under the BSD 3-Clause License (see LICENSE file in the project root).
 
-use crate::rdf_reader::convert_to_nt;
+use crate::rdf_reader::{concat_nt, convert_to_nt};
 use log::{debug, error};
 use std::{
     fmt,
@@ -58,20 +58,27 @@ pub fn build_hdt<P: AsRef<Path>, Q: AsRef<Path>>(inputs: &[P], dest: Q) -> Resul
     }
 
     let timer = std::time::Instant::now();
-    let first = inputs[0].as_ref();
-    let is_nt = inputs.len() == 1
-        && first
+    let all_nt = inputs.iter().all(|p| {
+        p.as_ref()
             .extension()
             .and_then(|e| e.to_str())
-            .is_some_and(|e| e.eq_ignore_ascii_case("nt"));
+            .is_some_and(|e| e.eq_ignore_ascii_case("nt"))
+    });
 
-    let (nt_path, _tmp_guard): (PathBuf, Option<tempfile::NamedTempFile>) = if is_nt {
-        (first.to_path_buf(), None)
-    } else {
-        let tmp = tempfile::Builder::new().suffix(".nt").tempfile()?;
-        convert_to_nt(inputs, tmp.reopen()?)?;
-        (tmp.path().to_path_buf(), Some(tmp))
-    };
+    let (nt_path, _tmp_guard): (PathBuf, Option<tempfile::NamedTempFile>) =
+        match (all_nt, inputs.len()) {
+            (true, 1) => (inputs[0].as_ref().to_path_buf(), None),
+            (true, _) => {
+                let tmp = tempfile::Builder::new().suffix(".nt").tempfile()?;
+                concat_nt(inputs, tmp.reopen()?)?;
+                (tmp.path().to_path_buf(), Some(tmp))
+            }
+            _ => {
+                let tmp = tempfile::Builder::new().suffix(".nt").tempfile()?;
+                convert_to_nt(inputs, tmp.reopen()?)?;
+                (tmp.path().to_path_buf(), Some(tmp))
+            }
+        };
 
     let converted_hdt = hdt::Hdt::read_nt(&nt_path)?;
 
@@ -82,7 +89,7 @@ pub fn build_hdt<P: AsRef<Path>, Q: AsRef<Path>>(inputs: &[P], dest: Q) -> Resul
         .create(true)
         .truncate(true)
         .open(dest.as_ref())?;
-    let mut writer = BufWriter::new(out_file);
+    let mut writer = BufWriter::with_capacity(1 << 20, out_file);
     converted_hdt.write(&mut writer)?;
     writer.flush()?;
 
@@ -168,6 +175,23 @@ mod tests {
     #[test]
     fn sparql12_tests() -> Result<(), Error> {
         run_sparql_suite("sparql12")
+    }
+
+    #[test]
+    fn multi_nt_concat() -> Result<(), Error> {
+        let tmp = tempfile::tempdir()?;
+        let a = tmp.path().join("a.nt");
+        let b = tmp.path().join("b.nt");
+        // `a` intentionally omits a trailing newline to exercise the separator.
+        std::fs::write(&a, "<http://ex/a> <http://ex/p> <http://ex/o1> .")?;
+        std::fs::write(&b, "<http://ex/b> <http://ex/p> <http://ex/o2> .\n")?;
+
+        let out = tmp.path().join("merged.hdt");
+        build_hdt(&[&a, &b], &out)?;
+
+        let reader = std::io::BufReader::new(std::fs::File::open(&out)?);
+        hdt::Hdt::read(reader)?;
+        Ok(())
     }
 
     fn find_ttl_files<P: AsRef<std::path::Path>>(dir: P) -> Vec<String> {
