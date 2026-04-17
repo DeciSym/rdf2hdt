@@ -26,8 +26,9 @@
 //! ```
 //! This will take `data.ttl`, convert to NTriple, and generate and save the HDT output to `result.hdt`.
 
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand};
 use rdf2hdt::builder::build_hdt;
+use std::process::ExitCode;
 
 /// Command-line interface for rdf2hdt Converter
 ///
@@ -67,7 +68,7 @@ enum Commands {
     },
 }
 
-fn main() {
+fn main() -> ExitCode {
     let cli = Cli::parse();
 
     env_logger::Builder::new()
@@ -76,9 +77,16 @@ fn main() {
 
     match &cli.command {
         Some(Commands::Convert { input, output }) => match build_hdt(input.clone(), output) {
-            Ok(_) => {}
-            Err(e) => eprintln!("Error writing: {}", e),
+            Ok(_) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("Error: {e}");
+                ExitCode::FAILURE
+            }
         },
-        None => {}
+        None => {
+            let _ = Cli::command().print_help();
+            eprintln!();
+            ExitCode::FAILURE
+        }
     }
 }
