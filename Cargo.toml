@@ -26,9 +26,6 @@ tempfile = "3.27"
 url = "2.5"
 
 [dev-dependencies]
-criterion = { version = "0.5", features = ["async_tokio"]}
+criterion = "0.5"
 pprof = { version = "0.15", features = ["protobuf", "protobuf-codec", "criterion"] }
 walkdir = "2.5"
-
-[package.metadata.cargo-machete]
-ignored = ["iref", "langtag"]

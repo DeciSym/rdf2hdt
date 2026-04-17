@@ -9,16 +9,14 @@ fn generate(c: &mut Criterion) {
     // requires tests/resources/taxonomy-nodes.nq, download via 'make init'
     // ##########################
     let tmp_dir: tempfile::TempDir = tempdir().unwrap();
-    let fname = format!("{}/rdf.hdt", tmp_dir.as_ref().display());
-    let test_hdt = fname.as_str();
-    let _ = std::fs::remove_file(test_hdt);
-    let source_rdf = "tests/resources/taxonomy-nodes.nq".to_string();
+    let test_hdt = tmp_dir.path().join("rdf.hdt");
+    let source_rdf = "tests/resources/taxonomy-nodes.nq";
 
     let mut group = c.benchmark_group("create HDT from NQ file");
     group.sample_size(10);
     group.measurement_time(Duration::from_secs(1090));
     group.bench_function("hdt create", |b| {
-        b.iter(|| build_hdt(vec![source_rdf.clone()], test_hdt).unwrap());
+        b.iter(|| build_hdt(&[source_rdf], &test_hdt).unwrap());
     });
     group.finish();
 
