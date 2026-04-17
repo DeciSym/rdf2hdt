@@ -5,34 +5,34 @@ use crate::rdf_reader::convert_to_nt;
 use log::{debug, error};
 use std::{
     fs::OpenOptions,
-    io::{BufWriter, Write},
+    io::{self, BufWriter, Write},
+    path::{Path, PathBuf},
 };
 
 pub fn build_hdt(file_paths: Vec<String>, dest_file: &str) -> Result<hdt::Hdt, hdt::hdt::Error> {
     if file_paths.is_empty() {
         error!("no files provided");
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::InvalidData,
-            "no files provided to convert",
-        )
-        .into());
+        return Err(
+            io::Error::new(io::ErrorKind::InvalidData, "no files provided to convert").into(),
+        );
     }
 
     let timer = std::time::Instant::now();
-    let mut used_tmp = false;
-    let nt_file = if file_paths.len() == 1 && file_paths[0].ends_with(".nt") {
-        file_paths[0].clone()
+    let is_nt = file_paths.len() == 1
+        && Path::new(&file_paths[0])
+            .extension()
+            .and_then(|e| e.to_str())
+            .is_some_and(|e| e.eq_ignore_ascii_case("nt"));
+
+    let (nt_path, _tmp_guard): (PathBuf, Option<tempfile::NamedTempFile>) = if is_nt {
+        (PathBuf::from(&file_paths[0]), None)
     } else {
-        used_tmp = true;
-        let tmp_file = tempfile::Builder::new()
-            .disable_cleanup(true)
-            .suffix(".nt")
-            .tempfile()?;
-        convert_to_nt(file_paths, tmp_file.reopen()?).expect("failed to convert file to NT");
-        tmp_file.path().to_str().unwrap().to_string()
+        let tmp = tempfile::Builder::new().suffix(".nt").tempfile()?;
+        convert_to_nt(file_paths, tmp.reopen()?).map_err(|e| io::Error::other(e.to_string()))?;
+        (tmp.path().to_path_buf(), Some(tmp))
     };
 
-    let converted_hdt = hdt::Hdt::read_nt(std::path::Path::new(&nt_file))?;
+    let converted_hdt = hdt::Hdt::read_nt(&nt_path)?;
 
     debug!("HDT build time: {:?}", timer.elapsed());
 
@@ -44,9 +44,6 @@ pub fn build_hdt(file_paths: Vec<String>, dest_file: &str) -> Result<hdt::Hdt, h
     let mut writer = BufWriter::new(out_file);
     converted_hdt.write(&mut writer)?;
     writer.flush()?;
-    if used_tmp {
-        let _ = std::fs::remove_file(nt_file);
-    }
 
     debug!("Total execution time: {:?}", timer.elapsed());
     Ok(converted_hdt)
