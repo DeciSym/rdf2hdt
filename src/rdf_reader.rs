@@ -13,6 +13,7 @@ use std::{
     io::{BufReader, BufWriter},
     path::Path,
 };
+use url::Url;
 
 pub(crate) fn convert_to_nt(
     file_paths: Vec<String>,
@@ -49,17 +50,15 @@ pub(crate) fn convert_to_nt(
                 format!("unrecognized file extension for {file}"),
             )
         })?;
-        let file_name = Path::new(&file)
-            .file_name()
-            .and_then(|n| n.to_str())
-            .ok_or_else(|| {
-                std::io::Error::new(
-                    std::io::ErrorKind::InvalidInput,
-                    format!("file {file} has no usable file name"),
-                )
-            })?;
+        let abs_path = std::fs::canonicalize(&file)?;
+        let base_iri = Url::from_file_path(&abs_path).map_err(|_| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("cannot build file:// URI for {file}"),
+            )
+        })?;
         let quads = RdfParser::from_format(rdf_format)
-            .with_base_iri(format!("file://{file_name}"))?
+            .with_base_iri(base_iri.as_str())?
             .for_reader(source_reader);
         let mut warned = false;
         for q in quads {

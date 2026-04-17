@@ -23,6 +23,7 @@ log = "0.4"
 oxrdf = "0.3"
 oxrdfio = "0.2"
 tempfile = "3.27"
+url = "2.5"
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["async_tokio"]}
