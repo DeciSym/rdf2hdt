@@ -667,8 +667,7 @@ checksum = "4f467dd6dccf739c208452f8014c75c18bb8301b050ad1cfb27153803edb0f51"
 [[package]]
 name = "hdt"
 version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b2b1ea7cbd25071f796251a1081ded2a164dd24e034d5f75342da35c157cf4e"
+source = "git+https://github.com/DeciSym/hdt?branch=additional-nt-perf#d37a4ec0d86d070fb1865857e585fc723b8a1715"
 dependencies = [
  "bitset-core",
  "bytesize",
@@ -679,7 +678,6 @@ dependencies = [
  "getrandom 0.3.4",
  "lasso",
  "log",
- "mem_dbg",
  "mownstr",
  "ntriple",
  "oxttl",
@@ -1387,8 +1385,7 @@ dependencies = [
 [[package]]
 name = "qwt"
 version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1518389953b62e3b4bac17d8edc67e8291ec040523ab682479d8c706efc0b7b"
+source = "git+https://github.com/rossanoventurini/qwt#310bd8170ef9a6ace90c71224b7afed01ed0372e"
 dependencies = [
  "bincode",
  "clap",

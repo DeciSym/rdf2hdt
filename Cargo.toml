@@ -20,7 +20,7 @@ clap = { version = "4.5", features = ["derive","cargo"] }
 clap-verbosity-flag = "3.0"
 env_logger = "0.11"
 flate2 = "1"
-hdt = { version = "0.6", default-features = false, features = ["nt"]}
+hdt = { git = "https://github.com/DeciSym/hdt", default-features = false, features = ["nt"], branch = "additional-nt-perf"}
 log = "0.4"
 oxrdf = "0.3"
 oxrdfio = "0.2"
