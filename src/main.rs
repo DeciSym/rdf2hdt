@@ -76,7 +76,7 @@ fn main() -> ExitCode {
         .init();
 
     match &cli.command {
-        Some(Commands::Convert { input, output }) => match build_hdt(input.clone(), output) {
+        Some(Commands::Convert { input, output }) => match build_hdt(input, output) {
             Ok(_) => ExitCode::SUCCESS,
             Err(e) => {
                 eprintln!("Error: {e}");

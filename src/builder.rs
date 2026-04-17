@@ -4,31 +4,72 @@
 use crate::rdf_reader::convert_to_nt;
 use log::{debug, error};
 use std::{
+    fmt,
     fs::OpenOptions,
     io::{self, BufWriter, Write},
     path::{Path, PathBuf},
 };
 
-pub fn build_hdt(file_paths: Vec<String>, dest_file: &str) -> Result<hdt::Hdt, hdt::hdt::Error> {
-    if file_paths.is_empty() {
+#[derive(Debug)]
+pub enum Error {
+    Io(io::Error),
+    Hdt(hdt::hdt::Error),
+    Parse(Box<dyn std::error::Error + Send + Sync>),
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::Io(e) => write!(f, "I/O error: {e}"),
+            Error::Hdt(e) => write!(f, "HDT error: {e}"),
+            Error::Parse(e) => write!(f, "parse error: {e}"),
+        }
+    }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Error::Io(e) => Some(e),
+            Error::Hdt(e) => Some(e),
+            Error::Parse(e) => Some(e.as_ref()),
+        }
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(e: io::Error) -> Self {
+        Error::Io(e)
+    }
+}
+
+impl From<hdt::hdt::Error> for Error {
+    fn from(e: hdt::hdt::Error) -> Self {
+        Error::Hdt(e)
+    }
+}
+
+pub fn build_hdt<P: AsRef<Path>, Q: AsRef<Path>>(inputs: &[P], dest: Q) -> Result<hdt::Hdt, Error> {
+    if inputs.is_empty() {
         error!("no files provided");
         return Err(
-            io::Error::new(io::ErrorKind::InvalidData, "no files provided to convert").into(),
+            io::Error::new(io::ErrorKind::InvalidInput, "no files provided to convert").into(),
         );
     }
 
     let timer = std::time::Instant::now();
-    let is_nt = file_paths.len() == 1
-        && Path::new(&file_paths[0])
+    let first = inputs[0].as_ref();
+    let is_nt = inputs.len() == 1
+        && first
             .extension()
             .and_then(|e| e.to_str())
             .is_some_and(|e| e.eq_ignore_ascii_case("nt"));
 
     let (nt_path, _tmp_guard): (PathBuf, Option<tempfile::NamedTempFile>) = if is_nt {
-        (PathBuf::from(&file_paths[0]), None)
+        (first.to_path_buf(), None)
     } else {
         let tmp = tempfile::Builder::new().suffix(".nt").tempfile()?;
-        convert_to_nt(file_paths, tmp.reopen()?).map_err(|e| io::Error::other(e.to_string()))?;
+        convert_to_nt(inputs, tmp.reopen()?)?;
         (tmp.path().to_path_buf(), Some(tmp))
     };
 
@@ -40,7 +81,7 @@ pub fn build_hdt(file_paths: Vec<String>, dest_file: &str) -> Result<hdt::Hdt, h
         .write(true)
         .create(true)
         .truncate(true)
-        .open(dest_file)?;
+        .open(dest.as_ref())?;
     let mut writer = BufWriter::new(out_file);
     converted_hdt.write(&mut writer)?;
     writer.flush()?;
@@ -55,7 +96,7 @@ mod tests {
     use super::*;
     use walkdir::WalkDir;
 
-    fn run_sparql_suite(suite: &str) -> hdt::hdt::Result<()> {
+    fn run_sparql_suite(suite: &str) -> Result<(), Error> {
         let suite_dir = format!("tests/resources/rdf-tests/sparql/{suite}");
         assert!(
             std::path::Path::new(&suite_dir).exists(),
@@ -86,12 +127,9 @@ mod tests {
             let stem = p.file_stem().and_then(|s| s.to_str()).unwrap_or("out");
             let out = tmp
                 .path()
-                .join(format!("{}_{}.hdt", parent_name.unwrap_or("root"), stem,));
-            let out_str = out
-                .to_str()
-                .expect("tempdir path should be valid UTF-8 on test platforms");
+                .join(format!("{}_{}.hdt", parent_name.unwrap_or("root"), stem));
 
-            if let Err(e) = build_hdt(vec![f.to_string()], out_str) {
+            if let Err(e) = build_hdt(std::slice::from_ref(f), &out) {
                 failures.push(format!("{f}: {e}"));
             }
         }
@@ -106,17 +144,17 @@ mod tests {
     }
 
     #[test]
-    fn sparql10_tests() -> hdt::hdt::Result<()> {
+    fn sparql10_tests() -> Result<(), Error> {
         run_sparql_suite("sparql10")
     }
 
     #[test]
-    fn sparql11_tests() -> hdt::hdt::Result<()> {
+    fn sparql11_tests() -> Result<(), Error> {
         run_sparql_suite("sparql11")
     }
 
     #[test]
-    fn sparql12_tests() -> hdt::hdt::Result<()> {
+    fn sparql12_tests() -> Result<(), Error> {
         run_sparql_suite("sparql12")
     }
 

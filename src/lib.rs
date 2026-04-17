@@ -3,3 +3,5 @@
 
 pub mod builder;
 pub(crate) mod rdf_reader;
+
+pub use builder::{Error, build_hdt};
