@@ -130,7 +130,19 @@ mod tests {
                 .join(format!("{}_{}.hdt", parent_name.unwrap_or("root"), stem));
 
             if let Err(e) = build_hdt(std::slice::from_ref(f), &out) {
-                failures.push(format!("{f}: {e}"));
+                failures.push(format!("{f}: build: {e}"));
+                continue;
+            }
+
+            let reader = match std::fs::File::open(&out) {
+                Ok(file) => std::io::BufReader::new(file),
+                Err(e) => {
+                    failures.push(format!("{f}: open: {e}"));
+                    continue;
+                }
+            };
+            if let Err(e) = hdt::Hdt::read(reader) {
+                failures.push(format!("{f}: read: {e}"));
             }
         }
 
