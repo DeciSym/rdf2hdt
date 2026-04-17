@@ -55,127 +55,69 @@ mod tests {
     use super::*;
     use walkdir::WalkDir;
 
-    #[test]
-    fn sparql10_tests() -> hdt::hdt::Result<()> {
-        let input_files = find_ttl_files("tests/resources/rdf-tests/sparql/sparql10");
+    fn run_sparql_suite(suite: &str) -> hdt::hdt::Result<()> {
+        let suite_dir = format!("tests/resources/rdf-tests/sparql/{suite}");
+        assert!(
+            std::path::Path::new(&suite_dir).exists(),
+            "{suite_dir} not found — run `git submodule update --init` to fetch rdf-tests"
+        );
+
+        let input_files = find_ttl_files(&suite_dir);
+        assert!(
+            !input_files.is_empty(),
+            "no .ttl files found under {suite_dir}"
+        );
+
+        let tmp = tempfile::tempdir()?;
+        let mut failures = Vec::new();
+
         for f in &input_files {
-            if f.ends_with("manifest.ttl")
-                || std::path::Path::new(f)
-                    .parent()
-                    .unwrap()
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    == "sparql10"
-            {
+            let p = std::path::Path::new(f);
+            let parent_name = p
+                .parent()
+                .and_then(|x| x.file_name())
+                .and_then(|x| x.to_str());
+            let file_name = p.file_name().and_then(|n| n.to_str());
+
+            if file_name == Some("manifest.ttl") || parent_name == Some(suite) {
                 continue;
             }
-            let hdt_file_path = format!(
-                "tests/resources/generated/nt/sparql10/{}/{}",
-                std::path::Path::new(f)
-                    .parent()
-                    .unwrap()
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap(),
-                std::path::Path::new(f)
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .replace(".ttl", ".hdt")
-            );
-            std::fs::create_dir_all(std::path::Path::new(&hdt_file_path).parent().unwrap())?;
 
-            if build_hdt(vec![f.to_string()], &hdt_file_path).is_ok() {
-                assert!(std::path::Path::new(&hdt_file_path).exists())
+            let stem = p.file_stem().and_then(|s| s.to_str()).unwrap_or("out");
+            let out = tmp
+                .path()
+                .join(format!("{}_{}.hdt", parent_name.unwrap_or("root"), stem,));
+            let out_str = out
+                .to_str()
+                .expect("tempdir path should be valid UTF-8 on test platforms");
+
+            if let Err(e) = build_hdt(vec![f.to_string()], out_str) {
+                failures.push(format!("{f}: {e}"));
             }
         }
+
+        assert!(
+            failures.is_empty(),
+            "{} conversion failure(s) in {suite}:\n{}",
+            failures.len(),
+            failures.join("\n")
+        );
         Ok(())
+    }
+
+    #[test]
+    fn sparql10_tests() -> hdt::hdt::Result<()> {
+        run_sparql_suite("sparql10")
     }
 
     #[test]
     fn sparql11_tests() -> hdt::hdt::Result<()> {
-        let input_files = find_ttl_files("tests/resources/rdf-tests/sparql/sparql11");
-        for f in &input_files {
-            if f.ends_with("manifest.ttl")
-                || std::path::Path::new(f)
-                    .parent()
-                    .unwrap()
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    == "sparql11"
-            {
-                continue;
-            }
-            let hdt_file_path = format!(
-                "tests/resources/generated/nt/sparql11/{}/{}",
-                std::path::Path::new(f)
-                    .parent()
-                    .unwrap()
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap(),
-                std::path::Path::new(f)
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .replace(".ttl", ".hdt")
-            );
-            std::fs::create_dir_all(std::path::Path::new(&hdt_file_path).parent().unwrap())?;
-
-            if build_hdt(vec![f.to_string()], &hdt_file_path).is_ok() {
-                assert!(std::path::Path::new(&hdt_file_path).exists())
-            }
-        }
-        Ok(())
+        run_sparql_suite("sparql11")
     }
 
     #[test]
     fn sparql12_tests() -> hdt::hdt::Result<()> {
-        let input_files = find_ttl_files("tests/resources/rdf-tests/sparql/sparql12");
-        for f in &input_files {
-            if f.ends_with("manifest.ttl")
-                || std::path::Path::new(f)
-                    .parent()
-                    .unwrap()
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    == "sparql12"
-            {
-                continue;
-            }
-            let hdt_file_path = format!(
-                "tests/resources/generated/nt/sparql12/{}/{}",
-                std::path::Path::new(f)
-                    .parent()
-                    .unwrap()
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap(),
-                std::path::Path::new(f)
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .replace(".ttl", ".hdt")
-            );
-            std::fs::create_dir_all(std::path::Path::new(&hdt_file_path).parent().unwrap())?;
-
-            if build_hdt(vec![f.to_string()], &hdt_file_path).is_ok() {
-                assert!(std::path::Path::new(&hdt_file_path).exists())
-            }
-        }
-        Ok(())
+        run_sparql_suite("sparql12")
     }
 
     fn find_ttl_files<P: AsRef<std::path::Path>>(dir: P) -> Vec<String> {
