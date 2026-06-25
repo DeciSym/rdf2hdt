@@ -1,6 +1,6 @@
 [package]
 name = "rdf2hdt"
-version = "0.4.0"
+version = "0.3.0"
 authors = ["Greg Hanson <g.isaac.hanson@gmail.com>"]
 edition = "2024"
 license = "BSD-3-Clause"
@@ -20,7 +20,7 @@ clap = { version = "4.5", features = ["derive","cargo"] }
 clap-verbosity-flag = "3.0"
 env_logger = "0.11"
 flate2 = "1"
-hdt = { git = "https://github.com/DeciSym/hdt", default-features = false, features = ["nt"], branch = "additional-nt-perf"}
+hdt = { version = "0.7.3", default-features = false, features = ["nt"]}
 log = "0.4"
 oxrdf = "0.3"
 oxrdfio = "0.2"
