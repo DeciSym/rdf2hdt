@@ -1,7 +1,7 @@
 // Copyright (c) 2025, Decisym, LLC
 // Licensed under the BSD 3-Clause License (see LICENSE file in the project root).
 
-use crate::rdf_reader::{concat_nt, convert_to_nt};
+use crate::rdf_reader::{concat_nt, convert_to_hdt};
 use log::{debug, error};
 use std::{
     fmt,
@@ -65,22 +65,24 @@ pub fn build_hdt<P: AsRef<Path>, Q: AsRef<Path>>(inputs: &[P], dest: Q) -> Resul
             .is_some_and(|e| e.eq_ignore_ascii_case("nt"))
     });
 
-    let (nt_path, _tmp_guard): (PathBuf, Option<tempfile::NamedTempFile>) =
-        match (all_nt, inputs.len()) {
-            (true, 1) => (inputs[0].as_ref().to_path_buf(), None),
-            (true, _) => {
-                let tmp = tempfile::Builder::new().suffix(".nt").tempfile()?;
-                concat_nt(inputs, tmp.reopen()?)?;
-                (tmp.path().to_path_buf(), Some(tmp))
-            }
-            _ => {
-                let tmp = tempfile::Builder::new().suffix(".nt").tempfile()?;
-                convert_to_nt(inputs, tmp.reopen()?)?;
-                (tmp.path().to_path_buf(), Some(tmp))
-            }
+    // N-Triples inputs go straight into `hdt`'s parallel N-Triples reader: a
+    // single file as-is, multiple files concatenated into one temp file. Any
+    // other RDF syntax is parsed with oxrdfio and streamed directly into the HDT
+    // dictionary via `Hdt::from_triples`, skipping a serialize-to-NT-and-reparse
+    // round trip through a temp file.
+    let converted_hdt = if all_nt {
+        let (nt_path, _tmp_guard): (PathBuf, Option<tempfile::NamedTempFile>) = if inputs.len() == 1
+        {
+            (inputs[0].as_ref().to_path_buf(), None)
+        } else {
+            let tmp = tempfile::Builder::new().suffix(".nt").tempfile()?;
+            concat_nt(inputs, tmp.reopen()?)?;
+            (tmp.path().to_path_buf(), Some(tmp))
         };
-
-    let converted_hdt = hdt::Hdt::read_nt(&nt_path)?;
+        hdt::Hdt::read_nt(&nt_path)?
+    } else {
+        convert_to_hdt(inputs)?
+    };
 
     debug!("HDT build time: {:?}", timer.elapsed());
 
