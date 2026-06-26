@@ -12,6 +12,8 @@ and then generates and saves the data as HDT. Implementation is based on the [HD
 and the output HDT is intended to be consumed by one of [hdt crate](https://github.com/KonradHoeffner/hdt), [hdt-cpp](https://github.com/rdfhdt/hdt-cpp),
 or [hdt-java](https://github.com/rdfhdt/hdt-java).
 
+Inputs ending in `.gz` or `.bz2` are decompressed transparently, and `.owl` files are parsed as RDF/XML.
+
 ## Installation
 
 Install `rdf2hdt` with `cargo`:
@@ -36,7 +38,7 @@ Options:
   -i, --input <INPUT>...
           Path to input RDF file(s).
 
-          Provide the path to one or more RDF files that will be parsed and converted. Support file formats: https://crates.io/crates/oxrdfio
+          Provide the path to one or more RDF files that will be parsed and converted. RDF syntaxes supported: see https://crates.io/crates/oxrdfio. `.owl` files are parsed as RDF/XML. Inputs ending in `.gz` or `.bz2` are transparently decompressed.
 
   -o, --output <OUTPUT>
           Path to output file.
@@ -58,11 +60,11 @@ Options:
 HDT files can be generated directly in Rust.
 
 ```rust
-use rdf2hdt::hdt::buld_hdt;
+use rdf2hdt::build_hdt;
 
-let result = build_hdt(
-  vec!["tests/resources/apple.ttl".to_string()],
-  "output.hdt",
+let hdt = build_hdt(
+    &["tests/resources/apple.ttl"],
+    "output.hdt",
 )?;
 ```
 

@@ -1,14 +1,18 @@
 #!/bin/bash
 
-set +ex
+set -euo pipefail
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+DEST_DIR="${SCRIPT_DIR}/../tests/resources"
+DEST_NQ="${DEST_DIR}/taxonomy-nodes.nq"
 
-if [[ -z "${CI}" ]] && [[ -f "${SCRIPT_DIR}/../tests/resources/taxonomy-nodes.nq" ]]; then
+if [[ -z "${CI:-}" ]] && [[ -f "${DEST_NQ}" ]]; then
     echo "dependencies present"
     exit 0
 fi
 
-sudo curl -L  https://download.bio2rdf.org/files/release/4/taxonomy/taxonomy-nodes.nq.gz -o $SCRIPT_DIR/../tests/resources/taxonomy-nodes.nq.gz
-sudo apt-get install gzip -y
-gzip -d $SCRIPT_DIR/../tests/resources/taxonomy-nodes.nq.gz
+mkdir -p "${DEST_DIR}"
+curl --fail --location --show-error \
+    "https://download.bio2rdf.org/files/release/4/taxonomy/taxonomy-nodes.nq.gz" \
+    -o "${DEST_NQ}.gz"
+gunzip -f "${DEST_NQ}.gz"

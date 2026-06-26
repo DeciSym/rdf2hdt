@@ -12,6 +12,8 @@
 //! ## Features
 //! - Parses RDF input and converts it to RDF triples
 //! - Convert NTriple data into HDT format
+//! - Transparent gzip (`.gz`) and bzip2 (`.bz2`) decompression of input files
+//! - `.owl` files parsed as RDF/XML
 //!
 //! ## Usage
 //! Run the rdf2hdt converter from the command line. For detailed usage information, run:
@@ -26,8 +28,9 @@
 //! ```
 //! This will take `data.ttl`, convert to NTriple, and generate and save the HDT output to `result.hdt`.
 
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand};
 use rdf2hdt::builder::build_hdt;
+use std::process::ExitCode;
 
 /// Command-line interface for rdf2hdt Converter
 ///
@@ -55,7 +58,9 @@ enum Commands {
         /// Path to input RDF file(s).
         ///
         /// Provide the path to one or more RDF files that will be parsed and converted.
-        /// Support file formats: https://crates.io/crates/oxrdfio
+        /// RDF syntaxes supported: see https://crates.io/crates/oxrdfio.
+        /// `.owl` files are parsed as RDF/XML. Inputs ending in `.gz` or `.bz2`
+        /// are transparently decompressed.
         #[arg(short, long, num_args = 1..)]
         input: Vec<String>,
 
@@ -67,7 +72,7 @@ enum Commands {
     },
 }
 
-fn main() {
+fn main() -> ExitCode {
     let cli = Cli::parse();
 
     env_logger::Builder::new()
@@ -75,10 +80,17 @@ fn main() {
         .init();
 
     match &cli.command {
-        Some(Commands::Convert { input, output }) => match build_hdt(input.clone(), output) {
-            Ok(_) => {}
-            Err(e) => eprintln!("Error writing: {}", e),
+        Some(Commands::Convert { input, output }) => match build_hdt(input, output) {
+            Ok(_) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("Error: {e}");
+                ExitCode::FAILURE
+            }
         },
-        None => {}
+        None => {
+            let _ = Cli::command().print_help();
+            eprintln!();
+            ExitCode::FAILURE
+        }
     }
 }
